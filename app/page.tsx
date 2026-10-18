@@ -111,6 +111,12 @@ export default function Home() {
   "Alege 3 acțiuni pentru săptămâna aceasta": "Choose 3 actions for this week",
   "Măsoară progresul în fiecare duminică": "Measure progress every Sunday",
   "Revizuiește planul și ajustează următorul pas": "Review the plan and adjust the next step",
+  "Definește rezultatul și indicatorul de succes": "Define the outcome and success metric",
+  "Alege 3 acțiuni săptămânale concrete": "Choose 3 concrete weekly actions",
+  "Blochează timp în calendar pentru execuție": "Block time in your calendar for execution",
+  "Analizează progresul din primele 30 de zile": "Review progress from the first 30 days",
+  "Elimină obstacolul principal": "Remove the main obstacle",
+  "Crește treptat acțiunile care funcționează": "Gradually increase the actions that work",
   "VENIT LUNAR ESTIMAT": "ESTIMATED MONTHLY INCOME",
   "Priorități pentru business": "Business priorities",
   "Contactează potențiali clienți": "Contact potential clients",
@@ -271,6 +277,12 @@ export default function Home() {
   "Choose 3 actions for this week": "Alege 3 acțiuni pentru săptămâna aceasta",
   "Measure progress every Sunday": "Măsoară progresul în fiecare duminică",
   "Review the plan and adjust the next step": "Revizuiește planul și ajustează următorul pas",
+  "Define the outcome and success metric": "Definește rezultatul și indicatorul de succes",
+  "Choose 3 concrete weekly actions": "Alege 3 acțiuni săptămânale concrete",
+  "Block time in your calendar for execution": "Blochează timp în calendar pentru execuție",
+  "Review progress from the first 30 days": "Analizează progresul din primele 30 de zile",
+  "Remove the main obstacle": "Elimină obstacolul principal",
+  "Gradually increase the actions that work": "Crește treptat acțiunile care funcționează",
   "ESTIMATED MONTHLY INCOME": "VENIT LUNAR ESTIMAT",
   "Business priorities": "Priorități pentru business",
   "Contact potential clients": "Contactează potențiali clienți",
@@ -424,6 +436,8 @@ export default function Home() {
         const parsed = JSON.parse(savedGoalPlans) as Record<string, GoalPlan>;
         setGoalPlans({ ...defaultGoalPlans, ...parsed });
         if (parsed['90']?.goal) setGoal(parsed['90'].goal);
+      } else if (savedGoal !== null) {
+        setGoalPlans(previous => ({ ...previous, '90': { ...previous['90'], goal: savedGoal } }));
       }
       const savedReflection = localStorage.getItem('life-os-reflection');
       if (savedReflection !== null) setReflection(savedReflection);
@@ -454,13 +468,13 @@ export default function Home() {
     });
   }
   function updateGoalPlan(period: '30' | '60' | '90', update: Partial<GoalPlan>) {
+    if (period === '90' && update.goal !== undefined) {
+      setGoal(update.goal);
+      try { localStorage.setItem('life-os-main-goal', update.goal); } catch {}
+    }
     setGoalPlans(previous => {
       const next = { ...previous, [period]: { ...previous[period], ...update } };
       try { localStorage.setItem('life-os-goal-plans', JSON.stringify(next)); } catch {}
-      if (period === '90' && update.goal !== undefined) {
-        setGoal(update.goal);
-        try { localStorage.setItem('life-os-main-goal', update.goal); } catch {}
-      }
       return next;
     });
   }
