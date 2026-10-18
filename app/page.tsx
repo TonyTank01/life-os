@@ -8,6 +8,20 @@ type HealthWorkout = { id: string; category: string; exercise: string; sets: str
 type HealthMeal = { id: string; name: string; calories: number; protein: number; carbs: number; fat: number };
 type HealthSleep = { hours: number; bedtime: string; wakeTime: string; quality: string };
 type HealthDayLog = { workouts: HealthWorkout[]; meals: HealthMeal[]; waterLiters: number; sleep?: HealthSleep; recoveryDone: string[] };
+type FoodItem = { name: string; calories: number; protein: number; carbs: number; fat: number };
+const foodCatalog: FoodItem[] = [
+{name:'Ovăz',calories:389,protein:16.9,carbs:66.3,fat:6.9},{name:'Orez alb fiert',calories:130,protein:2.7,carbs:28.2,fat:0.3},{name:'Paste fierte',calories:157,protein:5.8,carbs:30.9,fat:0.9},{name:'Cartofi fierți',calories:87,protein:1.9,carbs:20.1,fat:0.1},{name:'Pâine integrală',calories:247,protein:13,carbs:41,fat:4.2},
+{name:'Piept de pui gătit',calories:165,protein:31,carbs:0,fat:3.6},{name:'Piept de pui crud',calories:120,protein:22.5,carbs:0,fat:2.6},{name:'Pulpe de pui gătite',calories:209,protein:26,carbs:0,fat:10.9},{name:'Carne tocată vită 10% grăsime',calories:176,protein:20,carbs:0,fat:10},{name:'Somon gătit',calories:206,protein:22,carbs:0,fat:12.4},{name:'Ton în suc propriu scurs',calories:116,protein:25.5,carbs:0,fat:0.8},{name:'Ou întreg',calories:143,protein:12.6,carbs:0.7,fat:9.5},{name:'Albuș de ou',calories:52,protein:10.9,carbs:0.7,fat:0.2},
+{name:'Iaurt grecesc 2%',calories:73,protein:10,carbs:3.9,fat:2},{name:'Iaurt grecesc 10%',calories:133,protein:6.4,carbs:3.9,fat:10},{name:'Skyr simplu',calories:63,protein:11,carbs:4,fat:0.2},{name:'Lapte 1.5%',calories:46,protein:3.4,carbs:4.8,fat:1.5},{name:'Brânză de vaci slabă',calories:98,protein:11.1,carbs:3.4,fat:4.3},{name:'Cașcaval',calories:356,protein:25,carbs:1.5,fat:27},{name:'Mozzarella',calories:280,protein:28,carbs:3.1,fat:17},{name:'Whey protein pudră',calories:400,protein:80,carbs:8,fat:6},
+{name:'Banană',calories:89,protein:1.1,carbs:22.8,fat:0.3},{name:'Măr',calories:52,protein:0.3,carbs:13.8,fat:0.2},{name:'Portocală',calories:47,protein:0.9,carbs:11.8,fat:0.1},{name:'Afine',calories:57,protein:0.7,carbs:14.5,fat:0.3},{name:'Căpșuni',calories:32,protein:0.7,carbs:7.7,fat:0.3},{name:'Avocado',calories:160,protein:2,carbs:8.5,fat:14.7},{name:'Roșii',calories:18,protein:0.9,carbs:3.9,fat:0.2},{name:'Castravete',calories:15,protein:0.7,carbs:3.6,fat:0.1},{name:'Broccoli',calories:34,protein:2.8,carbs:6.6,fat:0.4},{name:'Legume mixte',calories:65,protein:3.2,carbs:12,fat:0.5},
+{name:'Migdale',calories:579,protein:21.2,carbs:21.6,fat:49.9},{name:'Nuci',calories:654,protein:15.2,carbs:13.7,fat:65.2},{name:'Unt de arahide',calories:588,protein:25,carbs:20,fat:50},{name:'Ulei de măsline',calories:884,protein:0,carbs:0,fat:100},{name:'Fasole fiartă',calories:127,protein:8.7,carbs:22.8,fat:0.5},{name:'Năut fiert',calories:164,protein:8.9,carbs:27.4,fat:2.6},{name:'Linte fiartă',calories:116,protein:9,carbs:20.1,fat:0.4},{name:'Tofu',calories:144,protein:17.3,carbs:2.8,fat:8.7},{name:'Ciocolată neagră 70%',calories:598,protein:7.8,carbs:45.9,fat:42.6},{name:'Miere',calories:304,protein:0.3,carbs:82.4,fat:0}
+];
+const exerciseCatalog = [
+'Back squat','Front squat','Goblet squat','Smith machine squat','Hack squat','Leg press','Bulgarian split squat','Walking lunges','Reverse lunges','Leg extension','Seated leg curl','Lying leg curl','Romanian deadlift','Conventional deadlift','Sumo deadlift','Hip thrust','Glute bridge','Cable kickback','Hip abduction machine','Standing calf raise','Seated calf raise',
+'Pull-ups','Chin-ups','Assisted pull-ups','Lat pulldown','Close-grip lat pulldown','Barbell row','Chest-supported row','One-arm dumbbell row','Seated cable row','Straight-arm pulldown','Face pull','Dumbbell shrug','Barbell curl','EZ-bar curl','Dumbbell curl','Hammer curl','Preacher curl','Cable curl',
+'Barbell bench press','Incline barbell bench press','Dumbbell bench press','Incline dumbbell press','Machine chest press','Push-ups','Chest dips','Cable chest fly','Pec deck','Overhead press','Dumbbell shoulder press','Arnold press','Dumbbell lateral raise','Cable lateral raise','Reverse pec deck','Rear delt fly','Close-grip bench press','Triceps pushdown','Overhead triceps extension','Skull crushers',
+'Plank','Side plank','Hanging leg raise','Lying leg raise','Cable crunch','Ab wheel rollout','Back extension','Treadmill run','Incline treadmill walk','Outdoor run','Walking','Stationary bike','Outdoor cycling','Elliptical','Rowing machine','Swimming','Stair climber','Zone 2 cardio','Jump rope','Hip flexor stretch','Hamstring stretch','Quad stretch','Calf stretch','Thoracic rotation','Cat-cow','Foam rolling'
+];
 type CoachingClient = { id: string; name: string; packageSize: 8 | 12 | 16; remaining: number; sessions: { date: string }[] };
 function localDateKey(date = new Date()) { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
 function localWeekKey(date = new Date()) { const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate()); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7)); return localDateKey(monday); }
@@ -429,7 +443,7 @@ export default function Home() {
   const [healthLoaded, setHealthLoaded] = useState(false);
   const [healthTab, setHealthTab] = useState<'workout'|'nutrition'|'recovery'|'sleep'>('workout');
   const [workoutForm, setWorkoutForm] = useState({category:'Strength', exercise:'', sets:'3', reps:'10', weight:'', duration:'45', notes:''});
-  const [mealForm, setMealForm] = useState({name:'', calories:'', protein:'', carbs:'', fat:''});
+  const [mealForm, setMealForm] = useState({name:'', grams:'100', calories:'', protein:'', carbs:'', fat:''});
   const [waterInput, setWaterInput] = useState('0.25');
   const [sleepForm, setSleepForm] = useState({hours:'8', bedtime:'23:00', wakeTime:'07:00', quality:'good'});
   const completed = tasks.filter(t => t.done).length;
@@ -548,11 +562,20 @@ export default function Home() {
     updateTodayHealth({ workouts: [...todayHealth.workouts, { ...workoutForm, id: String(Date.now()) }] });
     setWorkoutForm(previous => ({ ...previous, exercise: '', notes: '' }));
   }
+  function selectFood(name: string, grams = mealForm.grams) {
+    const food = foodCatalog.find(item => item.name.toLocaleLowerCase() === name.trim().toLocaleLowerCase());
+    if (!food) { setMealForm(previous => ({ ...previous, name, grams })); return; }
+    const factor = Math.max(0, Number(grams) || 0) / 100;
+    setMealForm(previous => ({ ...previous, name, grams, calories: String(Math.round(food.calories * factor)), protein: String(Math.round(food.protein * factor * 10) / 10), carbs: String(Math.round(food.carbs * factor * 10) / 10), fat: String(Math.round(food.fat * factor * 10) / 10) }));
+  }
+  function changeFoodGrams(grams: string) { selectFood(mealForm.name, grams); }
   function addHealthMeal() {
-    if (!mealForm.name.trim()) { alert(language === 'en' ? 'Enter the meal or food name first.' : 'Scrie mai întâi numele mesei sau alimentului.'); return; }
+    if (!mealForm.name.trim()) { alert(language === 'en' ? 'Choose a food or enter a custom meal first.' : 'Alege un aliment sau introdu mai întâi o masă personalizată.'); return; }
     const n = (value: string) => Math.max(0, Number(value) || 0);
-    updateTodayHealth({ meals: [...todayHealth.meals, { id: String(Date.now()), name: mealForm.name.trim(), calories: n(mealForm.calories), protein: n(mealForm.protein), carbs: n(mealForm.carbs), fat: n(mealForm.fat) }] });
-    setMealForm({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+    const matched = foodCatalog.some(item => item.name.toLocaleLowerCase() === mealForm.name.trim().toLocaleLowerCase());
+    const name = matched && Number(mealForm.grams) > 0 ? mealForm.name.trim() + ' · ' + mealForm.grams + ' g' : mealForm.name.trim();
+    updateTodayHealth({ meals: [...todayHealth.meals, { id: String(Date.now()), name, calories: n(mealForm.calories), protein: n(mealForm.protein), carbs: n(mealForm.carbs), fat: n(mealForm.fat) }] });
+    setMealForm({ name: '', grams: '100', calories: '', protein: '', carbs: '', fat: '' });
   }
   function saveHealthSleep() {
     const hours = Number(sleepForm.hours);
