@@ -22,7 +22,7 @@ DINCA METHOD is a premium personal-development system that helps people make pro
 - **Goals:** outcomes, milestones, dates, and weekly actions across life areas.
 - **Productivity:** tasks, projects, planning, routines, calendar-oriented views, and lightweight focus sessions.
 - **Fitness & GPS Running:** workout logs first; later, native phone GPS recording with live distance, elapsed time, pace, route map, kilometer splits, pause/resume, and activity history.
-- **Nutrition & Fasting:** meal and nutrition logs, user-selected eating windows, a flexible intermittent-fasting timer, fasting history, and optional notes on hunger, energy, and wellbeing. The app should support a user's chosen routine rather than push longer or stricter fasts.
+- **Nutrition & Fasting:** meal and nutrition logs, flexible intermittent-fasting windows, a fasting timer, and a separate carefully guarded flow for users who ask to track a prolonged fast. Include history and optional notes on hunger, energy, and wellbeing. Support user autonomy without nudging people toward longer or stricter fasts.
 - **Sleep & recovery:** sleep duration, subjective energy/recovery, and optional integrations where supported and consented to.
 - **Money:** simple income, expense, budget, and savings-goal tracking.
 - **Reflection:** weekly review, wins, obstacles, lessons, and next priorities.
@@ -50,6 +50,7 @@ DINCA METHOD is a premium personal-development system that helps people make pro
 - Habit schedules and history.
 - Initial fitness, nutrition, sleep, and fasting logs with user-controlled targets.
 - Fasting timer with start, pause/end, history, optional reminders, and a gentle wellbeing check-in; avoid competitive streaks that encourage ignoring symptoms.
+- Treat intermittent and prolonged fasting as distinct experiences. Prolonged-fast tracking must not be promoted as a default challenge or recommended duration; use explicit safety information and a stop-fast flow, and encourage clinician guidance before prolonged fasting.
 - Useful trend summaries and a weekly review flow.
 - Offline-friendly behavior with explicit sync/error status and conflict handling.
 - Guided onboarding that adapts the first plan to the user's selected goals and obstacles.
@@ -76,11 +77,13 @@ DINCA METHOD is a premium personal-development system that helps people make pro
 - Validate willingness to pay before committing to final pricing. Any prices in planning are hypotheses, not promises.
 
 ## Safety and health boundaries
-- Fasting is optional and is not necessary for everyone to improve their health.
-- The product should not prescribe extreme or prolonged fasts, promise medical benefits, or reward users for pushing through warning symptoms.
-- Provide clear guidance to stop a fast if the user feels unwell and to seek medical advice when appropriate.
-- Encourage professional guidance for users with relevant medical conditions or medications; fasting may be unsuitable for some people, including those with a history of eating disorders, people who are pregnant or breastfeeding, and people taking glucose-lowering medication without clinical guidance.
-- Present fasting data as self-tracking, not diagnosis or medical advice.
+- Fasting is optional and is not necessary for everyone to improve their health; benefits are not guaranteed and depend on the person and overall eating pattern.
+- Keep intermittent fasting and prolonged fasting clearly separate in the UI. Do not present prolonged fasting as the next level, a streak to beat, or a recommended health target.
+- Do not prescribe or automatically recommend prolonged fasts, and do not make medical-benefit claims. If users choose to record a prolonged fast, explain the risks, provide an easy stop/end option, and encourage medical guidance before starting.
+- Offer a gentle check-in for symptoms and clear guidance to stop fasting if the user feels unwell; the app must never encourage users to push through dizziness, faintness, confusion, marked weakness, or other concerning symptoms.
+- Flag that fasting may be unsuitable or require clinician guidance for people who are pregnant or breastfeeding, minors, people with a current or past eating disorder, diabetes or a history of severe hypoglycemia, certain kidney/heart conditions, acute illness, or medications that require food or affect blood glucose/fluid balance.
+- Never advise users to change or skip prescribed medication to fast. Encourage users to consult a qualified clinician for individualized advice.
+- Present fasting data as self-tracking, not diagnosis or medical advice; avoid ranking users by longest fast and avoid punitive streaks.
 
 ## Proposed architecture
 - **Web:** Next.js, React, TypeScript, responsive PWA.
