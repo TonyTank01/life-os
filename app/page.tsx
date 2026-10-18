@@ -564,7 +564,7 @@ export default function Home() {
   }
   function selectFood(name: string, grams = mealForm.grams) {
     const food = foodCatalog.find(item => item.name.toLocaleLowerCase() === name.trim().toLocaleLowerCase());
-    if (!food) { setMealForm(previous => ({ ...previous, name, grams })); return; }
+    if (!food) { setMealForm(previous => ({ ...previous, name, grams, calories: '', protein: '', carbs: '', fat: '' })); return; }
     const factor = Math.max(0, Number(grams) || 0) / 100;
     setMealForm(previous => ({ ...previous, name, grams, calories: String(Math.round(food.calories * factor)), protein: String(Math.round(food.protein * factor * 10) / 10), carbs: String(Math.round(food.carbs * factor * 10) / 10), fat: String(Math.round(food.fat * factor * 10) / 10) }));
   }
@@ -711,7 +711,6 @@ export default function Home() {
             </article>
             <article className="card"><h2>{hText('Totalul zilei','Daily totals')}</h2><div className="health-nutrient-grid"><div><span>kcal</span><b>{Math.round(totals.calories)}</b></div><div><span>{hText('Proteine','Protein')}</span><b>{Math.round(totals.protein)} g</b></div><div><span>{hText('Carbohidrați','Carbs')}</span><b>{Math.round(totals.carbs)} g</b></div><div><span>{hText('Grăsimi','Fat')}</span><b>{Math.round(totals.fat)} g</b></div></div>
               <div className="health-water"><div><h3>{hText('Hidratare','Hydration')}</h3><strong>{todayHealth.waterLiters.toFixed(2)} L</strong></div><div className="water-quick-add"><button className="secondary" onClick={()=>updateTodayHealth({waterLiters:Math.round((todayHealth.waterLiters+0.25)*100)/100})}>+250 ml</button><button className="secondary" onClick={()=>updateTodayHealth({waterLiters:Math.round((todayHealth.waterLiters+0.5)*100)/100})}>+500 ml</button><button className="secondary" onClick={()=>updateTodayHealth({waterLiters:Math.round((todayHealth.waterLiters+1)*100)/100})}>+1 L</button></div><label className="health-field">{hText('Altă cantitate (litri)','Custom amount (litres)')}<input className="email" type="number" min="0.05" max="5" step="0.05" value={waterInput} onChange={e=>setWaterInput(e.target.value)}/></label><button className="secondary" onClick={()=>updateTodayHealth({waterLiters:Math.round((todayHealth.waterLiters+Math.max(0,Number(waterInput)||0))*100)/100})}>{hText('+ Înregistrează cantitatea','+ Log amount')}</button></div>
-              </div>
               <div className="health-log-list">{todayHealth.meals.map(m=><div className="health-log-item" key={m.id}><div><b>{m.name}</b><small>{m.calories} kcal · P {m.protein} g · C {m.carbs} g · G {m.fat} g</small></div><button className="secondary" onClick={()=>updateTodayHealth({meals:todayHealth.meals.filter(item=>item.id!==m.id)})}>{hText('Șterge','Delete')}</button></div>)}</div>
             </article>
           </div>}
