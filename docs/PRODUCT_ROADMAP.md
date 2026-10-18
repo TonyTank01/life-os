@@ -22,7 +22,7 @@ DINCA METHOD is a premium personal-development system that helps people make pro
 - **Goals:** outcomes, milestones, dates, and weekly actions across life areas.
 - **Productivity:** tasks, projects, planning, routines, calendar-oriented views, and lightweight focus sessions.
 - **Fitness & GPS Running:** workout logs first; later, native phone GPS recording with live distance, elapsed time, pace, route map, kilometer splits, pause/resume, and activity history.
-- **Nutrition:** food and meal logging, simple nutrition targets, and progress summaries; avoid implying medical diagnosis.
+- **Nutrition & Fasting:** meal and nutrition logs, user-selected eating windows, a flexible intermittent-fasting timer, fasting history, and optional notes on hunger, energy, and wellbeing. The app should support a user's chosen routine rather than push longer or stricter fasts.
 - **Sleep & recovery:** sleep duration, subjective energy/recovery, and optional integrations where supported and consented to.
 - **Money:** simple income, expense, budget, and savings-goal tracking.
 - **Reflection:** weekly review, wins, obstacles, lessons, and next priorities.
@@ -48,7 +48,8 @@ DINCA METHOD is a premium personal-development system that helps people make pro
 ### Phase 2 — Personalization and retention
 - Goal milestones and weekly planning.
 - Habit schedules and history.
-- Initial fitness, nutrition, and sleep logs with user-controlled targets.
+- Initial fitness, nutrition, sleep, and fasting logs with user-controlled targets.
+- Fasting timer with start, pause/end, history, optional reminders, and a gentle wellbeing check-in; avoid competitive streaks that encourage ignoring symptoms.
 - Useful trend summaries and a weekly review flow.
 - Offline-friendly behavior with explicit sync/error status and conflict handling.
 - Guided onboarding that adapts the first plan to the user's selected goals and obstacles.
@@ -74,6 +75,13 @@ DINCA METHOD is a premium personal-development system that helps people make pro
 - Potential AI tier only after reliable data workflows exist; disclose AI use, cost limits, and data handling.
 - Validate willingness to pay before committing to final pricing. Any prices in planning are hypotheses, not promises.
 
+## Safety and health boundaries
+- Fasting is optional and is not necessary for everyone to improve their health.
+- The product should not prescribe extreme or prolonged fasts, promise medical benefits, or reward users for pushing through warning symptoms.
+- Provide clear guidance to stop a fast if the user feels unwell and to seek medical advice when appropriate.
+- Encourage professional guidance for users with relevant medical conditions or medications; fasting may be unsuitable for some people, including those with a history of eating disorders, people who are pregnant or breastfeeding, and people taking glucose-lowering medication without clinical guidance.
+- Present fasting data as self-tracking, not diagnosis or medical advice.
+
 ## Proposed architecture
 - **Web:** Next.js, React, TypeScript, responsive PWA.
 - **Backend:** Supabase Auth + PostgreSQL.
@@ -90,10 +98,11 @@ DINCA METHOD is a premium personal-development system that helps people make pro
 - Percentage of users completing a weekly review.
 - User-reported clarity and usefulness.
 - For running: completed recordings, GPS failure rate, activity sync success, and repeat runs.
+- For fasting: timer reliability, optional check-in completion, and user-reported usefulness—not longest fast or strictest streak.
 - Paid conversion only after retention and willingness-to-pay are measured.
 
 ## Current technical status
-This repository is a prototype/starter, not a production-ready commercial service. The existing UI includes multiple life-management areas, but cloud persistence, authentication hardening, backups, and mobile apps must be implemented and tested before inviting users to store sensitive personal data. GPS Running is a planned future module, not an implemented feature.
+This repository is a prototype/starter, not a production-ready commercial service. The existing UI includes multiple life-management areas, but cloud persistence, authentication hardening, backups, and mobile apps must be implemented and tested before inviting users to store sensitive personal data. GPS Running and Fasting are planned future modules, not implemented features.
 
 ## Immediate next engineering tasks
 1. Verify the feature branch and deployment/build status.
@@ -101,4 +110,4 @@ This repository is a prototype/starter, not a production-ready commercial servic
 3. Add reliable auth/session states and clear error handling.
 4. Test Supabase RLS with two separate test accounts.
 5. Make Today and onboarding excellent on narrow mobile screens.
-6. Validate the core life-management workflow before starting native mobile and GPS development.
+6. Validate the core life-management workflow before starting native mobile, GPS, and advanced health features.
