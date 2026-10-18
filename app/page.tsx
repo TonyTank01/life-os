@@ -426,6 +426,20 @@ export default function Home() {
   const [goalPlans, setGoalPlans] = useState<Record<string, GoalPlan>>(defaultGoalPlans);
   const [goalPeriod, setGoalPeriod] = useState<'30' | '60' | '90'>('90');
   const [dailyFocus, setDailyFocus] = useState('');
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [welcomeGoal, setWelcomeGoal] = useState<'fitness'|'discipline'|'work'|'balance'>('discipline');
+  const [welcomeBlocker, setWelcomeBlocker] = useState<'procrastination'|'overwhelmed'|'energy'|'unclear'>('procrastination');
+  useEffect(() => { try { if (localStorage.getItem('life-os-onboarding-v1') !== 'done') setWelcomeOpen(true); } catch {} }, []);
+  const starterPlans = { fitness: 'Fă 5 minute de mișcare ușoară sau pregătește echipamentul pentru antrenament.', discipline: 'Alege un singur lucru important și lucrează la el doar 2 minute.', work: 'Fă primul pas pentru un rezultat profesional: trimite un mesaj sau deschide documentul de lucru.', balance: 'Alege un lucru mic care îți va face ziua mai bună și începe cu 2 minute.' };
+  const blockerAdvice = { procrastination: 'Nu aștepta să apară cheful. Micșorăm sarcina până devine ușor să începi.', overwhelmed: 'Nu rezolvăm totul acum. Alegem un singur pas și ignorăm restul pentru moment.', energy: 'Azi adaptăm planul la energia ta. Un pas mic sau odihna potrivită valorează mai mult decât forțarea.', unclear: 'Nu trebuie să ai tot planul. Alegem următoarea acțiune, nu toată viața.' };
+  function beginFromWelcome() {
+    const firstStep = welcomeBlocker === 'energy' ? 'Adaptează planul la energia ta: fă o plimbare ușoară de 5 minute sau odihnește-te dacă nu te simți bine.' : welcomeBlocker === 'overwhelmed' ? 'Scrie un singur lucru important și fă doar primul pas timp de 2 minute.' : welcomeBlocker === 'unclear' ? 'Scrie ce rezultat vrei și alege o acțiune pe care o poți face în 2 minute.' : starterPlans[welcomeGoal];
+    setDailyFocus(firstStep);
+    setTasks(previous => [{id:'start-'+localDateKey(),title:'START 2 MIN: '+firstStep,done:false,category:'Primul pas'},...previous.filter(task=>!task.id.startsWith('start-'))]);
+    try { localStorage.setItem('life-os-onboarding-v1','done'); localStorage.setItem('life-os-focus-'+localDateKey(),firstStep); } catch {}
+    setActiveSection('Overview'); setWelcomeOpen(false);
+  }
+
   const [goalSteps, setGoalSteps] = useState<Record<string,boolean>>({});
   const [reviewWeek, setReviewWeek] = useState(localWeekKey());
   const [weeklyReviews, setWeeklyReviews] = useState<Record<string,WeeklyReview>>({});
@@ -820,6 +834,26 @@ export default function Home() {
     }
   }
   return <main className="shell">
+    {welcomeOpen && <div role="dialog" aria-modal="true" style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(5,10,20,.84)',display:'grid',placeItems:'center',padding:16,overflowY:'auto'}}>
+      <section style={{width:'100%',maxWidth:640,background:'#111827',color:'#f9fafb',borderRadius:22,padding:24,border:'1px solid #374151'}}>
+        <p style={{color:'#fb7185',fontWeight:800,letterSpacing:2,fontSize:12}}>LIFE OS · START HERE</p>
+        <h1 style={{fontSize:36,lineHeight:1.1,margin:'8px 0 12px'}}>Nu trebuie să-ți schimbi toată viața astăzi.</h1>
+        <p style={{lineHeight:1.6,opacity:.8}}>Te ghidăm pas cu pas. Alege ce vrei să îmbunătățești și ce te blochează cel mai des. Apoi îți dăm un singur pas mic, concret.</p>
+        <h3>Ce vrei să îmbunătățești?</h3>
+        <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+          {([{id:'fitness',label:'Forma fizică'},{id:'discipline',label:'Disciplină'},{id:'work',label:'Carieră și bani'},{id:'balance',label:'Viața per total'}] as const).map(o=><button key={o.id} onClick={()=>setWelcomeGoal(o.id)} style={{padding:12,borderRadius:12,border:welcomeGoal===o.id?'2px solid #fb7185':'1px solid #4b5563',background:welcomeGoal===o.id?'#4c1d35':'#1f2937',color:'white'}}>{o.label}</button>)}
+        </div>
+        <h3>Ce te blochează cel mai des?</h3>
+        <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+          {([{id:'procrastination',label:'Amân și nu încep'},{id:'overwhelmed',label:'Am prea multe în cap'},{id:'energy',label:'N-am energie'},{id:'unclear',label:'Nu știu de unde să încep'}] as const).map(o=><button key={o.id} onClick={()=>setWelcomeBlocker(o.id)} style={{padding:12,borderRadius:12,border:welcomeBlocker===o.id?'2px solid #fb7185':'1px solid #4b5563',background:welcomeBlocker===o.id?'#4c1d35':'#1f2937',color:'white'}}>{o.label}</button>)}
+        </div>
+        <p style={{marginTop:18,background:'#1f2937',padding:14,borderRadius:12,lineHeight:1.5}}>{blockerAdvice[welcomeBlocker]}</p>
+        <button onClick={beginFromWelcome} style={{width:'100%',padding:15,border:0,borderRadius:12,background:'#e11d48',color:'white',fontWeight:800,fontSize:15}}>Construiește-mi prima zi →</button>
+        <button onClick={()=>{try{localStorage.setItem('life-os-onboarding-v1','done')}catch{}setWelcomeOpen(false)}} style={{width:'100%',padding:12,marginTop:8,background:'transparent',border:0,color:'#d1d5db'}}>Vreau să explorez singur</button>
+        <small style={{opacity:.6}}>Ghidul de început este interactiv; Coach AI conversațional va necesita o integrare separată.</small>
+      </section>
+    </div>}
+
     <aside className="sidebar"><div className="brand"><div className="logo">L</div><div><b>LIFE OS</b><small>PERSONAL COMMAND CENTER</small></div></div><div className="language-switch" aria-label="Language selector"><span>{language === 'ro' ? 'LIMBĂ' : 'LANGUAGE'}</span><button className={language === 'ro' ? 'selected' : ''} onClick={() => changeLanguage('ro')}>RO</button><button className={language === 'en' ? 'selected' : ''} onClick={() => changeLanguage('en')}>EN</button></div><div className="navlabel">{language === 'ro' ? 'SPAȚIU DE LUCRU' : 'WORKSPACE'}</div><nav>{navItems.map((x,i)=><a href={`#${x.toLowerCase().replaceAll(' ','-')}`} onClick={e=>{e.preventDefault();setActiveSection(x);}} className={activeSection===x?'active':''} key={x}><span>{icons[i]}</span>{(language === 'ro' ? ({'Overview':'Prezentare','Daily planner':'Plan zilnic','90-day goals':'Obiective pe 90 de zile','Business & money':'Business și bani','Clients':'Clienți','Health & performance':'Sănătate și performanță','Relationships':'Relații','Faith & mind':'Credință și minte','Analytics':'Analiză','Settings & backup':'Setări și backup'} as Record<string,string>)[x] : x)}</a>)}</nav><div className="sidebar-note"><small>90-DAY FOCUS</small><b>Grow the coaching business.</b><p>Consistență, nu perfecțiune.</p></div></aside>
     <section className="main">{localizeNode(sectionContent())}<footer>{language === 'ro' ? 'LIFE OS · Creat pentru consecvență, nu perfecțiune.' : 'LIFE OS · Built for consistency, not perfection.'}</footer></section>
   </main>;
