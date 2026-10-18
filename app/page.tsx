@@ -5,6 +5,10 @@ import { createClient } from '@/lib/supabase/client';
 type Task = { id: string; title: string; done: boolean; category: string };
 type CoachingClient = { id: string; name: string; packageSize: 8 | 12 | 16; remaining: number; sessions: { date: string }[] };
 function localDateKey(date = new Date()) { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
+function localWeekKey(date = new Date()) { const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate()); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7)); return localDateKey(monday); }
+type WeeklyReview = { wins: string; blockers: string; lesson: string; next: string };
+const emptyReview: WeeklyReview = { wins: '', blockers: '', lesson: '', next: '' };
+const goalStepsList = ['Definește un rezultat măsurabil', 'Alege 3 acțiuni pentru săptămâna aceasta', 'Măsoară progresul în fiecare duminică', 'Revizuiește planul și ajustează următorul pas'];
 const initialTasks: Task[] = [
   { id: 't1', title: 'Contactează 3 potențiali clienți', done: false, category: 'Business' },
   { id: 't2', title: 'Publică sau pregătește un clip util', done: false, category: 'Conținut' },
@@ -33,6 +37,10 @@ export default function Home() {
   const [clients, setClients] = useState(7);
   const [goal, setGoal] = useState('Dezvoltă business-ul de coaching');
   const [dailyFocus, setDailyFocus] = useState('');
+  const [goalSteps, setGoalSteps] = useState<Record<string,boolean>>({});
+  const [reviewWeek, setReviewWeek] = useState(localWeekKey());
+  const [weeklyReviews, setWeeklyReviews] = useState<Record<string,WeeklyReview>>({});
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
   const [reflection, setReflection] = useState('');
   const [journalDate, setJournalDate] = useState(localDateKey());
   const [journalEntries, setJournalEntries] = useState<Record<string,string>>({});
@@ -56,8 +64,30 @@ export default function Home() {
       if (savedReflection !== null) setReflection(savedReflection);
       const savedFocus = localStorage.getItem(`life-os-focus-${localDateKey()}`);
       if (savedFocus !== null) setDailyFocus(savedFocus);
+      const savedGoalSteps = localStorage.getItem('life-os-goal-steps');
+      if (savedGoalSteps) setGoalSteps(JSON.parse(savedGoalSteps));
     } catch {}
   }, []);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('life-os-weekly-reviews');
+      if (saved) setWeeklyReviews(JSON.parse(saved));
+    } catch {}
+    setReviewsLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (reviewsLoaded) { try { localStorage.setItem('life-os-weekly-reviews', JSON.stringify(weeklyReviews)); } catch {} }
+  }, [weeklyReviews, reviewsLoaded]);
+  function updateWeeklyReview(field: keyof WeeklyReview, value: string) {
+    setWeeklyReviews(previous => ({ ...previous, [reviewWeek]: { ...(previous[reviewWeek] || emptyReview), [field]: value } }));
+  }
+  function toggleGoalStep(step: string) {
+    setGoalSteps(previous => {
+      const next = { ...previous, [step]: !previous[step] };
+      try { localStorage.setItem('life-os-goal-steps', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
   function saveTasks(next: Task[]) {
     setTasks(next);
     try { localStorage.setItem('life-os-demo-tasks', JSON.stringify(next)); } catch {}
@@ -125,7 +155,7 @@ export default function Home() {
           <article className="card"><div className="card-head"><div><h2>Lista de azi</h2><p>Bifează fiecare pas pe măsură ce îl termini.</p></div><span className="chip">DAILY EXECUTION</span></div><div className="tasks">{tasks.map(t=><label className={`task ${t.done?'done':''}`} key={t.id}><input type="checkbox" checked={t.done} onChange={()=>toggle(t.id)}/><span><b>{t.title}</b><small>{t.category}</small></span></label>)}</div><button className="primary" onClick={addTask}>+ Adaugă activitate</button></article>
           <article className="card" style={{marginTop:14}}><h2>Obiceiuri zilnice</h2><p>Consecvență înainte de perfecțiune.</p>{['Mișcare / antrenament','Mese conform planului','10 minute de reflecție sau rugăciune','Pregătește ziua de mâine'].map(h=><label className={`task ${habits[h]?'done':''}`} key={h}><input type="checkbox" checked={!!habits[h]} onChange={()=>toggleHabit(h)}/><span><b>{h}</b></span></label>)}</article></>;
       case '90-day goals':
-        return <>{header('Obiective pe 90 de zile',descriptions[activeSection])}<article className="card"><div className="card-head"><div><h2>Misiunea principală</h2><p>Definește un rezultat clar, apoi revizuiește-l săptămânal.</p></div></div><label>OBIECTIV</label><input className="email" value={goal} onChange={e=>{setGoal(e.target.value);try{localStorage.setItem('life-os-main-goal',e.target.value);}catch{}}} aria-label="Obiectiv principal"/><h3>Etape recomandate</h3><div className="milestones">{['01 · Definește ținta','02 · Acțiuni săptămânale','03 · Măsoară progresul','04 · Revizuiește'].map(x=><span key={x}>{x}</span>)}</div><p className="muted">Obiectivul se salvează automat în acest browser și revine când redeschizi aplicația pe acest dispozitiv.</p></article></>;
+        return <>{header('Obiective pe 90 de zile',descriptions[activeSection])}<article className="card"><div className="card-head"><div><h2>Misiunea principală</h2><p>Definește un rezultat clar, apoi revizuiește-l săptămânal.</p></div><span className="chip">{goalStepsList.filter(step=>goalSteps[step]).length} / {goalStepsList.length} PAȘI</span></div><label>OBIECTIV</label><input className="email" value={goal} onChange={e=>{setGoal(e.target.value);try{localStorage.setItem('life-os-main-goal',e.target.value);}catch{}}} aria-label="Obiectiv principal"/><div className="goal-progress"><div className="area-label"><span>Progresul sistemului</span><b>{Math.round(goalStepsList.filter(step=>goalSteps[step]).length/goalStepsList.length*100)}%</b></div><div className="bar"><i style={{width:(goalStepsList.filter(step=>goalSteps[step]).length/goalStepsList.length*100)+'%'}}/></div></div><h3>Pașii tăi de execuție</h3><p className="muted">Nu trebuie să faci totul astăzi. Bifează pașii pe măsură ce îți construiești sistemul.</p><div className="tasks">{goalStepsList.map((step,index)=><label className={\`task \${goalSteps[step]?'done':''}\`} key={step}><input type="checkbox" checked={!!goalSteps[step]} onChange={()=>toggleGoalStep(step)}/><span><b>{step}</b><small>ETAPA 0{index+1}</small></span></label>)}</div><p className="muted">Obiectivul și pașii se salvează automat în browserul acestui dispozitiv.</p></article></>;
       case 'Business & money':
         return <>{header('Business & money',descriptions[activeSection])}<div className="stats"><article className="card"><label>VENIT LUNAR ESTIMAT</label><strong>{income.toLocaleString('ro-RO')} <small>RON</small></strong><p>Țintă: 5.000 RON</p><input aria-label="Venit lunar" type="range" min="0" max="10000" step="100" value={income} onChange={e=>setIncome(Number(e.target.value))}/></article><article className="card"><label>CLIENȚI ACTIVI</label><strong>{clients}</strong><p>Țintă: 11 clienți</p><input aria-label="Clienți activi" type="range" min="0" max="20" value={clients} onChange={e=>setClients(Number(e.target.value))}/></article></div><article className="card"><h2>Priorități pentru business</h2>{['Contactează potențiali clienți','Publică un clip educativ','Revino la lead-urile existente','Verifică progresul clienților'].map((h)=><label className={`task ${habits[h]?'done':''}`} key={h}><input type="checkbox" checked={!!habits[h]} onChange={()=>toggleHabit(h)}/><span><b>{h}</b></span></label>)}</article></>;
       case 'Clients':
@@ -149,7 +179,12 @@ export default function Home() {
           {Object.keys(journalEntries).filter(day=>journalEntries[day]?.trim()).sort((a,b)=>b.localeCompare(a)).length ? <div className="milestones">{Object.keys(journalEntries).filter(day=>journalEntries[day]?.trim()).sort((a,b)=>b.localeCompare(a)).map(day=><button className="secondary" key={day} onClick={()=>setJournalDate(day)}>{day}{day===localDateKey()?' · Azi':''}</button>)}</div> : <p className="muted">Încă nu ai zile salvate. Scrie prima reflecție și apasă „Salvează ziua”.</p>}
           <p className="muted">Datele sunt salvate în browserul acestui dispozitiv. Pentru sincronizare între dispozitive va trebui conectată baza de date.</p></article></>;
       case 'Analytics':
-        return <>{header('Analytics',descriptions[activeSection])}<div className="stats"><article className="card"><label>TASKURI FINALIZATE</label><strong>{completed}/{tasks.length}</strong><p>Progresul listei curente</p></article><article className="card"><label>RATA DE FINALIZARE</label><strong>{pct}%</strong><div className="bar"><i style={{width:`${pct}%`}}/></div></article><article className="card"><label>OBICEIURI BIFATE</label><strong>{Object.values(habits).filter(Boolean).length}</strong><p>Înregistrări locale</p></article></div><article className="card"><h2>Scoruri orientative — Roata vieții</h2>{areas.map(a=><div className="area" key={a.name}><div className="area-label"><span>{a.name}</span><b>{a.score}/10</b></div><div className="bar"><i style={{width:`${a.score*10}%`}}/></div></div>)}</article></>;
+        const review = weeklyReviews[reviewWeek] || emptyReview;
+        const savedReviewWeeks = Object.keys(weeklyReviews).filter(week => Object.values(weeklyReviews[week] || emptyReview).some(value => value.trim())).sort((a,b)=>b.localeCompare(a));
+        return <>{header('Analytics & weekly review','Nu poți îmbunătăți ce nu ești dispus să privești cu sinceritate.')}
+          <div className="stats"><article className="card"><label>TASKURI FINALIZATE</label><strong>{completed}/{tasks.length}</strong><p>Progresul listei curente</p></article><article className="card"><label>RATA DE FINALIZARE</label><strong>{pct}%</strong><div className="bar"><i style={{width:\`\${pct}%\`}}/></div></article><article className="card"><label>OBICEIURI BIFATE</label><strong>{Object.values(habits).filter(Boolean).length}</strong><p>Înregistrări locale</p></article><article className="card"><label>JURNAL</label><strong>{Object.values(journalEntries).filter(value=>value.trim()).length}</strong><p>Zile cu reflecție salvată</p></article></div>
+          <article className="card review-card"><div className="card-head"><div><span className="eyebrow">WEEKLY RESET</span><h2 style={{marginTop:7}}>Revizuirea săptămânii</h2><p>Fii sincer, nu perfect. Scopul este să înveți și să ajustezi.</p></div><span className="chip">SALVARE AUTOMATĂ</span></div><label htmlFor="review-week">SĂPTĂMÂNA ÎNCEPUTĂ LA</label><input id="review-week" className="email" type="date" value={reviewWeek} onChange={e=>setReviewWeek(e.target.value)} style={{marginTop:8,marginBottom:18}}/><div className="review-grid"><label className="review-field"><span>01 / Ce a mers bine?</span><textarea className="email" rows={3} placeholder="Rezultate, acțiuni și momente de care ești mândru..." value={review.wins} onChange={e=>updateWeeklyReview('wins',e.target.value)}/></label><label className="review-field"><span>02 / Ce m-a blocat?</span><textarea className="email" rows={3} placeholder="Ce ai evitat? Ce ți-a consumat energia?" value={review.blockers} onChange={e=>updateWeeklyReview('blockers',e.target.value)}/></label><label className="review-field"><span>03 / Ce am învățat?</span><textarea className="email" rows={3} placeholder="Ce ai înțeles despre tine sau despre planul tău?" value={review.lesson} onChange={e=>updateWeeklyReview('lesson',e.target.value)}/></label><label className="review-field"><span>04 / Care este prioritatea următoare?</span><textarea className="email" rows={3} placeholder="Alege un rezultat clar pentru săptămâna următoare..." value={review.next} onChange={e=>updateWeeklyReview('next',e.target.value)}/></label></div><p className="review-save"><span className="saved-mark">●</span> Se salvează automat în acest browser</p>{savedReviewWeeks.length>0 && <><h3>Revizuiri anterioare</h3><div className="milestones">{savedReviewWeeks.map(week=><button key={week} className={reviewWeek===week?'primary':'secondary'} style={{width:'auto',marginTop:0}} onClick={()=>setReviewWeek(week)}>{week}</button>)}</div></>}</article>
+          <article className="card"><h2>Scoruri orientative — Roata vieții</h2><p className="muted">Folosește scorurile ca punct de pornire pentru reflecție, nu ca verdict despre viața ta.</p>{areas.map(a=><div className="area" key={a.name}><div className="area-label"><span>{a.name}</span><b>{a.score}/10</b></div><div className="bar"><i style={{width:\`\${a.score*10}%\`}}/></div></div>)}</article></>;
       case 'Settings & backup':
         return <>{header('Settings & backup',descriptions[activeSection])}<article className="card"><h2>Starea aplicației</h2><p className="muted">Versiune demonstrativă. Taskurile și obiceiurile sunt păstrate local în browserul acestui dispozitiv. Sincronizarea între dispozitive nu este activă până la configurarea Supabase.</p><button className="secondary" onClick={()=>{const backup={tasks,habits,income,clients,goal,dailyFocus,journalEntries,clientsList,exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='life-os-backup.json';a.click();URL.revokeObjectURL(url);}}>Descarcă backup JSON</button><div style={{marginTop:18}}><h2>Autentificare prin email</h2><input className="email" type="email" placeholder="Adresa ta de email" value={email} onChange={e=>setEmail(e.target.value)}/><button className="primary" onClick={signIn}>Trimite link de autentificare</button><p className="status">{status}</p></div></article></>;
       default:
