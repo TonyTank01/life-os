@@ -438,10 +438,23 @@ export default function Home() {
   }
   function beginFromWelcome() {
     const firstStep = getWelcomeFirstStep();
+    const destination: Record<typeof welcomeGoal, string> = {
+      fitness: 'Health & performance',
+      discipline: 'Daily planner',
+      work: 'Business & money',
+      balance: '90-day goals'
+    };
+    const category = welcomeGoalLabels[welcomeGoal];
     setDailyFocus(firstStep);
-    setTasks(previous => [{id:'start-'+localDateKey(),title:'START 2 MIN: '+firstStep,done:false,category:welcomeGoalLabels[welcomeGoal]},...previous.filter(task=>!task.id.startsWith('start-'))]);
-    try { localStorage.setItem('life-os-onboarding-v1','done'); localStorage.setItem('life-os-focus-'+localDateKey(),firstStep); } catch {}
-    setActiveSection('Overview'); setWelcomeOpen(false);
+    setTasks(previous => [{id:'start-'+localDateKey(),title:'START 2 MIN: '+firstStep,done:false,category},...previous.filter(task=>!task.id.startsWith('start-'))]);
+    try {
+      localStorage.setItem('life-os-onboarding-v1','done');
+      localStorage.setItem('life-os-focus-'+localDateKey(),firstStep);
+      localStorage.setItem('life-os-primary-goal',welcomeGoal);
+      localStorage.setItem('life-os-primary-blocker',welcomeBlocker);
+    } catch {}
+    setActiveSection(destination[welcomeGoal]);
+    setWelcomeOpen(false);
   }
 
   const [goalSteps, setGoalSteps] = useState<Record<string,boolean>>({});
