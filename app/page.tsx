@@ -472,7 +472,11 @@ export default function Home() {
   const [habits, setHabits] = useState<Record<string,boolean>>({});
   const [healthLogs, setHealthLogs] = useState<Record<string, HealthDayLog>>({});
   const [healthLoaded, setHealthLoaded] = useState(false);
-  const [healthTab, setHealthTab] = useState<'workout'|'nutrition'|'recovery'|'sleep'|'goals'>('goals');
+  const [healthTab, setHealthTab] = useState<'workout'|'nutrition'|'recovery'|'sleep'|'goals'|'fasting'>('goals');
+  type FastingTracker = { startedAt: number | null; targetHours: number; lastEndedAt: number | null; lastDurationHours: number | null; completedCount: number };
+  const [fastingTracker, setFastingTracker] = useState<FastingTracker>({ startedAt: null, targetHours: 12, lastEndedAt: null, lastDurationHours: null, completedCount: 0 });
+  const [fastingLoaded, setFastingLoaded] = useState(false);
+  const [fastingNow, setFastingNow] = useState(Date.now());
   type NutritionProfile = { weight: string; height: string; age: string; sex: 'male'|'female'; activity: string; objective: 'gain'|'maintain'|'lose'; proteinFactor: string; fatFactor: string; calorieOverride: string };
   const defaultNutritionProfile: NutritionProfile = { weight: '80', height: '181', age: '25', sex: 'male', activity: '1.55', objective: 'gain', proteinFactor: '2', fatFactor: '0.95', calorieOverride: '' };
   const [nutritionProfile, setNutritionProfile] = useState<NutritionProfile>(defaultNutritionProfile);
@@ -491,6 +495,9 @@ export default function Home() {
       if (savedHabits) setHabits(JSON.parse(savedHabits));
       const savedHealthLogs = localStorage.getItem('life-os-health-logs');
       if (savedHealthLogs) setHealthLogs(JSON.parse(savedHealthLogs));
+      const savedFastingTracker = localStorage.getItem('dinca-method-fasting');
+      if (savedFastingTracker) setFastingTracker({ startedAt: null, targetHours: 12, lastEndedAt: null, lastDurationHours: null, completedCount: 0, ...JSON.parse(savedFastingTracker) });
+      setFastingLoaded(true);
       const savedNutritionProfile = localStorage.getItem('life-os-nutrition-profile');
       if (savedNutritionProfile) setNutritionProfile({ ...defaultNutritionProfile, ...JSON.parse(savedNutritionProfile) });
       setNutritionProfileLoaded(true);
@@ -588,6 +595,14 @@ export default function Home() {
     try { localStorage.setItem('life-os-health-logs', JSON.stringify(healthLogs)); } catch {}
   }, [healthLogs, healthLoaded]);
   useEffect(() => {
+    if (!fastingLoaded) return;
+    try { localStorage.setItem('dinca-method-fasting', JSON.stringify(fastingTracker)); } catch {}
+  }, [fastingTracker, fastingLoaded]);
+  useEffect(() => {
+    const timer = setInterval(() => setFastingNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
     if (!nutritionProfileLoaded) return;
     try { localStorage.setItem('life-os-nutrition-profile', JSON.stringify(nutritionProfile)); } catch {}
   }, [nutritionProfile, nutritionProfileLoaded]);
@@ -623,6 +638,17 @@ export default function Home() {
     const hours = Number(sleepForm.hours);
     if (!Number.isFinite(hours) || hours < 0 || hours > 24) { alert(language === 'en' ? 'Enter sleep duration between 0 and 24 hours.' : 'Introdu un număr de ore de somn între 0 și 24.'); return; }
     updateTodayHealth({ sleep: { hours, bedtime: sleepForm.bedtime, wakeTime: sleepForm.wakeTime, quality: sleepForm.quality } });
+  }
+  function startFasting() {
+    if (fastingTracker.startedAt !== null) return;
+    setFastingTracker(previous => ({ ...previous, startedAt: Date.now() }));
+    setFastingNow(Date.now());
+  }
+  function endFasting() {
+    if (fastingTracker.startedAt === null) return;
+    const duration = Math.max(0, (Date.now() - fastingTracker.startedAt) / 3600000);
+    setFastingTracker(previous => ({ ...previous, startedAt: null, lastEndedAt: Date.now(), lastDurationHours: duration, completedCount: previous.completedCount + (duration >= previous.targetHours ? 1 : 0) }));
+    setFastingNow(Date.now());
   }
   function toggleRecoveryTip(tip: string) {
     const done = todayHealth.recoveryDone.includes(tip);
@@ -722,7 +748,7 @@ export default function Home() {
         const sleepHours = todayHealth.sleep?.hours;
         const sleepAdvice = sleepHours === undefined ? hText('Introdu durata somnului pentru recomandări mai potrivite.','Enter your sleep duration for tailored recommendations.') : sleepHours < 6 ? hText('Ai înregistrat sub 6 ore. Prioritizează o noapte mai lungă și redu intensitatea dacă ești obosit.','You logged under 6 hours. Prioritize a longer night and reduce intensity if tired.') : sleepHours < 7 ? hText('Somnul este sub intervalul recomandat pentru majoritatea adulților. Încearcă să adaugi 30–60 de minute.','Sleep is below the range recommended for most adults. Try adding 30–60 minutes.') : sleepHours <= 9 ? hText('Durata este în general potrivită. Păstrează ore de culcare și trezire constante.','This duration is generally suitable. Keep bedtime and wake time consistent.') : hText('Peste 9 ore poate fi normal după efort sau deficit de somn. Dacă nevoia persistă ori te trezești epuizat, discută cu un medic.','Over 9 hours can be normal after hard training or sleep debt. If it persists or you wake exhausted, speak with a clinician.');
         const nutritionAdvice = totals.calories === 0 ? hText('Adaugă mesele și valorile de pe etichete sau dintr-o sursă de încredere. Estimările sunt orientative.','Log meals using labels or a reliable food database. Estimates are approximate.') : totals.protein < 100 ? hText('Ai înregistrat sub 100 g proteine. Verifică dacă ai introdus toate mesele și include o sursă de proteine la mesele principale.','You logged under 100 g protein. Check that all meals are entered and include protein in main meals.') : hText('Compară totalul cu obiectivul tău și urmărește media pe mai multe zile, nu o singură zi.','Compare totals with your personal target and track the multi-day average, not just one day.');
-        const tabs = [{id:'goals',ro:'Obiective nutriționale',en:'Nutrition goals'},{id:'workout',ro:'Antrenament',en:'Workout'},{id:'nutrition',ro:'Mese & apă',en:'Meals & water'},{id:'recovery',ro:'Recuperare',en:'Recovery'},{id:'sleep',ro:'Somn',en:'Sleep'}] as const;
+        const tabs = [{id:'goals',ro:'Obiective nutriționale',en:'Nutrition goals'},{id:'workout',ro:'Antrenament',en:'Workout'},{id:'nutrition',ro:'Mese & apă',en:'Meals & water'},{id:'recovery',ro:'Recuperare',en:'Recovery'},{id:'sleep',ro:'Somn',en:'Sleep'},{id:'fasting',ro:'Fasting',en:'Fasting'}] as const;
         return <>{header('Health & performance',descriptions[activeSection])}
           <div className="health-summary-grid">
             <article className="card health-stat"><label>{hText('ANTRENAMENTE AZI','WORKOUTS TODAY')}</label><strong>{todayHealth.workouts.length}</strong><p>{hText('În ultimele 7 zile:','Last 7 days:')} {recentWorkouts}</p></article>
@@ -731,6 +757,23 @@ export default function Home() {
             <article className="card health-stat"><label>{hText('SOMN','SLEEP')}</label><strong>{sleepHours === undefined ? '—' : sleepHours.toLocaleString()} <small>h</small></strong><p>{hText('durata introdusă manual','manually logged duration')}</p></article>
           </div>
           <div className="health-tabs" role="tablist" aria-label={hText('Jurnal sănătate','Health log')}>{tabs.map(tab=><button key={tab.id} role="tab" aria-selected={healthTab===tab.id} className={healthTab===tab.id?'active':''} onClick={()=>setHealthTab(tab.id)}>{hText(tab.ro,tab.en)}</button>)}</div>
+          {healthTab === 'fasting' && <div className="health-layout">
+            <article className="card">
+              <span className="eyebrow">DINCA METHOD · FASTING</span>
+              <h2>{hText('Tracker de fasting','Fasting tracker')}</h2>
+              <p className="muted">{hText('Urmărește o fereastră de post alimentară simplă, fără extreme. Alege o țintă realistă și oprește postul dacă te simți rău.','Track a simple eating fast without extremes. Choose a realistic target and stop if you feel unwell.')}</p>
+              <label className="health-field">{hText('Ținta ta','Your target')}<select className="email" value={fastingTracker.targetHours} disabled={fastingTracker.startedAt !== null} onChange={e=>setFastingTracker(previous=>({...previous,targetHours:Number(e.target.value)}))}><option value={12}>12 {hText('ore','hours')}</option><option value={14}>14 {hText('ore','hours')}</option><option value={16}>16 {hText('ore','hours')}</option></select></label>
+              <div style={{margin:'22px 0',padding:22,borderRadius:16,border:'1px solid #374151',background:'#0b1220',textAlign:'center'}}>
+                <small className="eyebrow">{fastingTracker.startedAt !== null ? hText('POST ÎN DESFĂȘURARE','FAST IN PROGRESS') : hText('DURATA ULTIMULUI POST','LAST FAST DURATION')}</small>
+                <div style={{fontSize:38,fontWeight:800,letterSpacing:1,margin:'8px 0'}}>{fastingTracker.startedAt !== null ? `${Math.floor((fastingNow-fastingTracker.startedAt)/3600000)}h ${String(Math.floor(((fastingNow-fastingTracker.startedAt)%3600000)/60000)).padStart(2,'0')}m` : fastingTracker.lastDurationHours !== null ? `${fastingTracker.lastDurationHours.toFixed(1)} h` : '—'}</div>
+                {fastingTracker.startedAt !== null && <p className="muted">{Math.min(100,Math.round(((fastingNow-fastingTracker.startedAt)/3600000/fastingTracker.targetHours)*100))}% {hText('din ținta aleasă','of selected target')}</p>}
+                {fastingTracker.startedAt !== null && <div className="bar"><i style={{width:`${Math.min(100,Math.max(0,((fastingNow-fastingTracker.startedAt)/3600000/fastingTracker.targetHours)*100))}%`}}/></div>}
+              </div>
+              {fastingTracker.startedAt === null ? <button className="primary" onClick={startFasting}>{hText('Începe postul acum','Start fast now')}</button> : <button className="primary" onClick={endFasting}>{hText('Încheie postul','End fast')}</button>}
+              <div className="stats" style={{marginTop:18}}><article className="card"><label>{hText('POSTURI CU ȚINTA ATINSĂ','TARGETS REACHED')}</label><strong>{fastingTracker.completedCount}</strong></article><article className="card"><label>{hText('ȚINTĂ CURENTĂ','CURRENT TARGET')}</label><strong>{fastingTracker.targetHours} <small>h</small></strong></article></div>
+            </article>
+            <article className="card"><h2>{hText('Reguli de bun-simț','Safety first')}</h2><ul className="muted" style={{lineHeight:1.8,paddingLeft:20}}><li>{hText('Începe cu 12 ore; nu este nevoie să urmărești postul de 16 ore dacă nu ți se potrivește.','Start with 12 hours; you do not need to pursue 16 hours if it does not suit you.')}</li><li>{hText('Hidratează-te și nu folosi fasting-ul ca pedeapsă pentru ce ai mâncat.','Stay hydrated and never use fasting as punishment for what you ate.')}</li><li>{hText('Încheie postul dacă apar amețeală, tremur, slăbiciune sau greață.','End the fast if you develop dizziness, shaking, weakness or nausea.')}</li><li>{hText('Cere sfatul medicului înainte de fasting dacă ai diabet, istoric de tulburări alimentare, iei medicamente influențate de mese sau ai o afecțiune relevantă.','Ask a clinician before fasting if you have diabetes, a history of eating disorders, medications affected by meals, or a relevant medical condition.')}</li></ul><p className="muted">{hText('Tracker-ul salvează datele local în acest browser. Nu este un instrument medical și nu sincronizează încă datele între dispozitive.','The tracker saves data locally in this browser. It is not a medical tool and does not yet sync across devices.')}</p></article>
+          </div>}
           {healthTab === 'goals' && <div className="health-layout">
             <article className="card">
               <h2>{hText('Calculator de calorii și macronutrienți','Calorie and macro calculator')}</h2>
