@@ -431,11 +431,15 @@ export default function Home() {
   const [welcomeBlocker, setWelcomeBlocker] = useState<'procrastination'|'overwhelmed'|'energy'|'unclear'>('procrastination');
   useEffect(() => { try { if (localStorage.getItem('life-os-onboarding-v1') !== 'done') setWelcomeOpen(true); } catch {} }, []);
   const starterPlans = { fitness: 'Fă 5 minute de mișcare ușoară sau pregătește echipamentul pentru antrenament.', discipline: 'Alege un singur lucru important și lucrează la el doar 2 minute.', work: 'Fă primul pas pentru un rezultat profesional: trimite un mesaj sau deschide documentul de lucru.', balance: 'Alege un lucru mic care îți va face ziua mai bună și începe cu 2 minute.' };
+  const welcomeGoalLabels = { fitness: 'Forma fizică', discipline: 'Disciplină', work: 'Carieră și bani', balance: 'Viața per total' };
   const blockerAdvice = { procrastination: 'Nu aștepta să apară cheful. Micșorăm sarcina până devine ușor să începi.', overwhelmed: 'Nu rezolvăm totul acum. Alegem un singur pas și ignorăm restul pentru moment.', energy: 'Azi adaptăm planul la energia ta. Un pas mic sau odihna potrivită valorează mai mult decât forțarea.', unclear: 'Nu trebuie să ai tot planul. Alegem următoarea acțiune, nu toată viața.' };
+  function getWelcomeFirstStep() {
+    return welcomeBlocker === 'energy' ? 'Adaptează planul la energia ta: fă o plimbare ușoară de 5 minute sau odihnește-te dacă nu te simți bine.' : welcomeBlocker === 'overwhelmed' ? 'Scrie un singur lucru important și fă doar primul pas timp de 2 minute.' : welcomeBlocker === 'unclear' ? 'Scrie ce rezultat vrei și alege o acțiune pe care o poți face în 2 minute.' : starterPlans[welcomeGoal];
+  }
   function beginFromWelcome() {
-    const firstStep = welcomeBlocker === 'energy' ? 'Adaptează planul la energia ta: fă o plimbare ușoară de 5 minute sau odihnește-te dacă nu te simți bine.' : welcomeBlocker === 'overwhelmed' ? 'Scrie un singur lucru important și fă doar primul pas timp de 2 minute.' : welcomeBlocker === 'unclear' ? 'Scrie ce rezultat vrei și alege o acțiune pe care o poți face în 2 minute.' : starterPlans[welcomeGoal];
+    const firstStep = getWelcomeFirstStep();
     setDailyFocus(firstStep);
-    setTasks(previous => [{id:'start-'+localDateKey(),title:'START 2 MIN: '+firstStep,done:false,category:'Primul pas'},...previous.filter(task=>!task.id.startsWith('start-'))]);
+    setTasks(previous => [{id:'start-'+localDateKey(),title:'START 2 MIN: '+firstStep,done:false,category:welcomeGoalLabels[welcomeGoal]},...previous.filter(task=>!task.id.startsWith('start-'))]);
     try { localStorage.setItem('life-os-onboarding-v1','done'); localStorage.setItem('life-os-focus-'+localDateKey(),firstStep); } catch {}
     setActiveSection('Overview'); setWelcomeOpen(false);
   }
@@ -843,12 +847,17 @@ export default function Home() {
         <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
           {([{id:'fitness',label:'Forma fizică'},{id:'discipline',label:'Disciplină'},{id:'work',label:'Carieră și bani'},{id:'balance',label:'Viața per total'}] as const).map(o=><button key={o.id} onClick={()=>setWelcomeGoal(o.id)} style={{padding:12,borderRadius:12,border:welcomeGoal===o.id?'2px solid #fb7185':'1px solid #4b5563',background:welcomeGoal===o.id?'#4c1d35':'#1f2937',color:'white'}}>{o.label}</button>)}
         </div>
+        <div style={{marginTop:14,background:'#1f2937',border:'1px solid #7f1d3d',padding:14,borderRadius:14}}>
+          <small style={{color:'#fb7185',fontWeight:800,letterSpacing:1}}>PRIMUL TĂU PAS · {welcomeGoalLabels[welcomeGoal].toUpperCase()}</small>
+          <p style={{margin:'8px 0 0',lineHeight:1.6}}>{starterPlans[welcomeGoal]}</p>
+          <small style={{display:'block',marginTop:8,opacity:.75}}>Când alegi alt obiectiv, recomandarea se schimbă automat. La final, pasul ales va fi adăugat în planul tău de azi.</small>
+        </div>
         <h3>Ce te blochează cel mai des?</h3>
         <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
           {([{id:'procrastination',label:'Amân și nu încep'},{id:'overwhelmed',label:'Am prea multe în cap'},{id:'energy',label:'N-am energie'},{id:'unclear',label:'Nu știu de unde să încep'}] as const).map(o=><button key={o.id} onClick={()=>setWelcomeBlocker(o.id)} style={{padding:12,borderRadius:12,border:welcomeBlocker===o.id?'2px solid #fb7185':'1px solid #4b5563',background:welcomeBlocker===o.id?'#4c1d35':'#1f2937',color:'white'}}>{o.label}</button>)}
         </div>
         <p style={{marginTop:18,background:'#1f2937',padding:14,borderRadius:12,lineHeight:1.5}}>{blockerAdvice[welcomeBlocker]}</p>
-        <button onClick={beginFromWelcome} style={{width:'100%',padding:15,border:0,borderRadius:12,background:'#e11d48',color:'white',fontWeight:800,fontSize:15}}>Construiește-mi prima zi →</button>
+        <button onClick={beginFromWelcome} style={{width:'100%',padding:15,border:0,borderRadius:12,background:'#e11d48',color:'white',fontWeight:800,fontSize:15}}>Adaugă pasul în planul meu de azi →</button>
         <button onClick={()=>{try{localStorage.setItem('life-os-onboarding-v1','done')}catch{}setWelcomeOpen(false)}} style={{width:'100%',padding:12,marginTop:8,background:'transparent',border:0,color:'#d1d5db'}}>Vreau să explorez singur</button>
         <small style={{opacity:.6}}>Ghidul de început este interactiv; Coach AI conversațional va necesita o integrare separată.</small>
       </section>
