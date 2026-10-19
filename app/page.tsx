@@ -8,7 +8,7 @@ type HealthWorkout = { id: string; category: string; exercise: string; sets: str
 type HealthWorkoutSession = { id: string; category: string; duration: string; averageHeartRate: string; maxHeartRate: string; exerciseCount: number };
 type HealthMeal = { id: string; name: string; calories: number; protein: number; carbs: number; fat: number };
 type HealthSleep = { hours: number; bedtime: string; wakeTime: string; quality: string };
-type HealthDayLog = { workouts: HealthWorkout[]; workoutSessions?: HealthWorkoutSession[]; meals: HealthMeal[]; waterLiters: number; sleep?: HealthSleep; recoveryDone: string[] };
+type HealthDayLog = { workouts: HealthWorkout[]; workoutSessions?: HealthWorkoutSession[]; meals: HealthMeal[]; waterLiters: number; sleep?: HealthSleep; recoveryDone: string[]; supplementsTaken?: string[]; simpleActivity?: string; simpleFoodNote?: string };
 type FoodItem = { name: string; calories: number; protein: number; carbs: number; fat: number };
 type MeasurementEntry = { date: string; chest?: number; waist?: number; thigh?: number; arms?: number };
 const foodCatalog: FoodItem[] = [
@@ -508,6 +508,8 @@ export default function Home() {
   const [waterGoal, setWaterGoal] = useState(2.5);
   const [waterGoalLoaded, setWaterGoalLoaded] = useState(false);
   const [healthTab, setHealthTab] = useState<'workout'|'nutrition'|'recovery'|'sleep'|'goals'|'fasting'|'weight'|'journal'|'supplements'>('goals');
+  const [healthMode, setHealthMode] = useState<'simple'|'advanced'>('simple');
+  const [healthModeLoaded, setHealthModeLoaded] = useState(false);
   type FastingTracker = { startedAt: number | null; targetHours: number; lastEndedAt: number | null; lastDurationHours: number | null; completedCount: number };
   const [fastingTracker, setFastingTracker] = useState<FastingTracker>({ startedAt: null, targetHours: 12, lastEndedAt: null, lastDurationHours: null, completedCount: 0 });
   const [fastingLoaded, setFastingLoaded] = useState(false);
@@ -639,6 +641,17 @@ export default function Home() {
     if (title?.trim()) saveTasks([...tasks, { id: crypto.randomUUID(), title: title.trim(), done: false, category: activeSection === 'Daily planner' ? 'Personal' : activeSection }]);
   }
   useEffect(() => {
+    try {
+      const savedMode = localStorage.getItem('dinca-method-health-mode');
+      if (savedMode === 'simple' || savedMode === 'advanced') setHealthMode(savedMode);
+    } catch {}
+    setHealthModeLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!healthModeLoaded) return;
+    try { localStorage.setItem('dinca-method-health-mode', healthMode); } catch {}
+  }, [healthMode, healthModeLoaded]);
+  useEffect(() => {
     if (!healthLoaded) return;
     try { localStorage.setItem('life-os-health-logs', JSON.stringify(healthLogs)); } catch {}
   }, [healthLogs, healthLoaded]);
@@ -687,6 +700,14 @@ export default function Home() {
     updateTodayHealth({ workouts: [...todayHealth.workouts, ...pendingWorkoutExercises.map((item, index) => ({ ...item, id: `${sessionId}-${index}`, sessionId }))], workoutSessions: [...(todayHealth.workoutSessions || []), session] });
     setPendingWorkoutExercises([]);
     setWorkoutSessionForm({duration:'', averageHeartRate:'', maxHeartRate:''});
+  }
+  function saveSimpleActivity() {
+    const activity = (todayHealth.simpleActivity || '').trim();
+    if (!activity) return;
+    const sessionId = `simple-session-${Date.now()}`;
+    const item: HealthWorkout = { id: `${sessionId}-0`, category: 'Activity', exercise: activity, sets: '', reps: '', weight: '', duration: '', notes: '', sessionId };
+    const session: HealthWorkoutSession = { id: sessionId, category: 'Activity', duration: '', averageHeartRate: '', maxHeartRate: '', exerciseCount: 1 };
+    updateTodayHealth({ workouts: [...todayHealth.workouts, item], workoutSessions: [...(todayHealth.workoutSessions || []), session], simpleActivity: '' });
   }
   function selectFood(name: string, grams = mealForm.grams) {
     const food = foodCatalog.find(item => item.name.toLocaleLowerCase() === name.trim().toLocaleLowerCase());
@@ -834,13 +855,19 @@ export default function Home() {
         const nutritionAdvice = totals.calories === 0 ? hText('Adaugă mesele și valorile de pe etichete sau dintr-o sursă de încredere. Estimările sunt orientative.','Log meals using labels or a reliable food database. Estimates are approximate.') : totals.protein < 100 ? hText('Ai înregistrat sub 100 g proteine. Verifică dacă ai introdus toate mesele și include o sursă de proteine la mesele principale.','You logged under 100 g protein. Check that all meals are entered and include protein in main meals.') : hText('Compară totalul cu obiectivul tău și urmărește media pe mai multe zile, nu o singură zi.','Compare totals with your personal target and track the multi-day average, not just one day.');
         const tabs = [{id:'goals',ro:'Obiective nutriționale',en:'Nutrition goals'},{id:'workout',ro:'Antrenament',en:'Workout'},{id:'nutrition',ro:'Mese & apă',en:'Meals & water'},{id:'recovery',ro:'Recuperare',en:'Recovery'},{id:'sleep',ro:'Somn',en:'Sleep'},{id:'fasting',ro:'Fasting',en:'Fasting'},{id:'weight',ro:'Greutate',en:'Weight'},{id:'journal',ro:'Jurnal zilnic',en:'Daily journal'},{id:'supplements',ro:'Suplimente',en:'Supplements'}] as const;
         return <>{header('Health & performance',descriptions[activeSection])}
+          <div className="health-mode-switch" role="group" aria-label={hText('Nivel de detaliu','Detail level')} style={{display:'flex',gap:8,flexWrap:'wrap',margin:'0 0 16px'}}><button type="button" className={healthMode==='simple'?'primary':'secondary'} style={{width:'auto',marginTop:0}} aria-pressed={healthMode==='simple'} onClick={()=>setHealthMode('simple')}>{hText('Simplu','Simple')}</button><button type="button" className={healthMode==='advanced'?'primary':'secondary'} style={{width:'auto',marginTop:0}} aria-pressed={healthMode==='advanced'} onClick={()=>setHealthMode('advanced')}>{hText('Advanced','Advanced')}</button><span className="muted" style={{alignSelf:'center',fontSize:13}}>{healthMode==='simple'?hText('Înregistrează rapid doar ce contează.','Quickly log only what matters.'):hText('Control detaliat pentru antrenament și nutriție.','Detailed workout and nutrition tracking.')}</span></div>
           <div className="health-summary-grid">
             <article className="card health-stat"><label>{hText('ANTRENAMENTE AZI','WORKOUTS TODAY')}</label><strong>{todayHealth.workoutSessions?.length ?? (todayHealth.workouts.length ? 1 : 0)}</strong><p>{hText('În ultimele 7 zile:','Last 7 days:')} {recentWorkouts}</p></article>
             <article className="card health-stat"><label>{hText('CALORII ÎNREGISTRATE','CALORIES LOGGED')}</label><strong>{Math.round(totals.calories).toLocaleString()} <small>kcal</small></strong><p>{Math.round(totals.protein)} g {hText('proteine','protein')}</p></article>
             <article className="card health-stat"><label>{hText('APĂ','WATER')}</label><strong>{todayHealth.waterLiters.toFixed(2)} <small>L</small></strong><p>{hText('înregistrat azi','logged today')}</p></article>
             <article className="card health-stat"><label>{hText('SOMN','SLEEP')}</label><strong>{sleepHours === undefined ? '—' : sleepHours.toLocaleString()} <small>h</small></strong><p>{hText('durata introdusă manual','manually logged duration')}</p></article>
           </div>
-          <div className="health-tabs" role="tablist" aria-label={hText('Jurnal sănătate','Health log')}>{tabs.map(tab=><button key={tab.id} role="tab" aria-selected={healthTab===tab.id} className={healthTab===tab.id?'active':''} onClick={()=>setHealthTab(tab.id)}>{hText(tab.ro,tab.en)}</button>)}</div>
+          {healthMode === 'simple' ? <div className="health-layout">
+            <article className="card"><h2>{hText('Mișcare și antrenament','Movement and workout')}</h2><p className="muted">{hText('Scrie pe scurt ce ai făcut. Nu trebuie să introduci fiecare exercițiu, set sau greutate.','Briefly write what you did. You do not need to enter every exercise, set or weight.')}</p><label className="health-field">{hText('Ce ai făcut azi?','What did you do today?')}<input className="email" value={todayHealth.simpleActivity || ''} onChange={e=>updateTodayHealth({simpleActivity:e.target.value})} placeholder={hText('Ex. Antrenament de spate și 20 min cardio','E.g. Back workout and 20 min cardio')}/></label><button className="primary" disabled={!(todayHealth.simpleActivity || '').trim()} onClick={saveSimpleActivity}>{hText('Salvează activitatea','Save activity')}</button><p className="muted tiny">{hText('Activitatea salvată va apărea în jurnalul zilei și va conta ca o singură sesiune.','Saved activity appears in the daily log and counts as one session.')}</p></article>
+            <article className="card"><h2>{hText('Suplimente luate azi','Supplements taken today')}</h2><p className="muted">{hText('Bifează doar ce ai luat. Poți lăsa totul nebifat; nu este o obligație.','Check only what you took. You can leave everything unchecked; this is optional.')}</p>{[{id:'Creatină',en:'Creatine'},{id:'Magneziu bisglicinat',en:'Magnesium bisglycinate'},{id:'Omega-3',en:'Omega-3'},{id:'Vitamina D3 + K2 MK-7',en:'Vitamin D3 + K2 MK-7'},{id:'Whey protein',en:'Whey protein'}].map(item=><label className="task" key={item.id} style={{marginTop:8}}><input type="checkbox" checked={(todayHealth.supplementsTaken || []).includes(item.id)} onChange={e=>updateTodayHealth({supplementsTaken:e.target.checked?[...(todayHealth.supplementsTaken || []),item.id]:(todayHealth.supplementsTaken || []).filter(value=>value!==item.id)})}/><span><b>{hText(item.id,item.en)}</b></span></label>)}<p className="muted tiny">{hText('Bifele se salvează automat pentru ziua curentă.','Selections save automatically for today.')}</p></article>
+            <article className="card"><h2>{hText('Hidratare rapidă','Quick hydration')}</h2><div className="health-summary-grid"><article className="card health-stat"><label>{hText('APĂ AZI','WATER TODAY')}</label><strong>{todayHealth.waterLiters.toFixed(2)} <small>L</small></strong></article></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button className="secondary" onClick={()=>updateTodayHealth({waterLiters:Math.round((todayHealth.waterLiters+0.25)*100)/100})}>+250 ml</button><button className="secondary" onClick={()=>updateTodayHealth({waterLiters:Math.round((todayHealth.waterLiters+0.5)*100)/100})}>+500 ml</button><button className="secondary" onClick={()=>updateTodayHealth({waterLiters:Math.max(0,Math.round((todayHealth.waterLiters-0.25)*100)/100)})}>{hText('−250 ml','−250 ml')}</button></div></article>
+            <article className="card"><h2>{hText('Notiță despre alimentație','Food note')}</h2><p className="muted">{hText('O notiță rapidă, fără calcule. Pentru calorii și macronutrienți, poți trece oricând în Advanced.','A quick note, without calculations. For calories and macros, switch to Advanced anytime.')}</p><textarea className="email" rows={3} value={todayHealth.simpleFoodNote || ''} onChange={e=>updateTodayHealth({simpleFoodNote:e.target.value})} placeholder={hText('Ex. 3 mese, suficiente proteine, am băut apă...','E.g. 3 meals, enough protein, drank water...')}/></article>
+          </div> : <><div className="health-tabs" role="tablist" aria-label={hText('Jurnal sănătate','Health log')}>{tabs.map(tab=><button key={tab.id} role="tab" aria-selected={healthTab===tab.id} className={healthTab===tab.id?'active':''} onClick={()=>setHealthTab(tab.id)}>{hText(tab.ro,tab.en)}</button>)}</div>
           {healthTab === 'weight' && <div className="health-layout">
             <article className="card"><h2>{hText('Urmărește-ți greutatea','Track your weight')}</h2><p className="muted">{hText('Înregistrează greutatea aproximativ în aceleași condiții, de preferat dimineața. Uită-te la tendința pe mai multe săptămâni, nu la o singură zi.','Log your weight under similar conditions, preferably in the morning. Look at the trend over several weeks, not a single day.')}</p>
               <label className="health-field">{hText('Greutate (kg)','Weight (kg)')}<input className="email" type="number" min="25" max="350" step="0.1" placeholder={hText('Ex. 80.5','e.g. 80.5')} value={weightInput} onChange={e=>setWeightInput(e.target.value)} /></label>
@@ -1038,7 +1065,8 @@ export default function Home() {
               </article>;
             })()}
           </div>}
-          <p className="health-storage-note">{hText('Datele se salvează automat în browserul acestui dispozitiv, nu în cloud. Baza include alimente uzuale cu valori generice per 100 g; produsele de marcă și prepararea pot schimba valorile. Pentru alimente care lipsesc, introdu valorile de pe etichetă.','Data is saved in this device’s browser, not the cloud. The list contains common foods with generic per-100 g values; brands and preparation can change values. For missing foods, enter the nutrition label values.')}</p>
+          </>}
+          <p className="health-storage-note">{hText('Datele se salvează automat în browserul acestui dispozitiv, nu în cloud. Baza include alimente uzuale cu valori generice per 100 g; produsele de marcă și prepararea pot schimba valorile. Pentru alimente care lipsesc, introdu valorile de pe etichetă.','Data is saved automatically in this device’s browser, not the cloud. The food database uses generic values per 100 g; brands and preparation can change them. For missing foods, enter label values.')}</p>
         </>;
       }
       case 'Relationships':
