@@ -507,7 +507,7 @@ export default function Home() {
   const [healthJournalDate, setHealthJournalDate] = useState(localDateKey());
   const [waterGoal, setWaterGoal] = useState(2.5);
   const [waterGoalLoaded, setWaterGoalLoaded] = useState(false);
-  const [healthTab, setHealthTab] = useState<'workout'|'nutrition'|'recovery'|'sleep'|'goals'|'fasting'|'weight'|'journal'>('goals');
+  const [healthTab, setHealthTab] = useState<'workout'|'nutrition'|'recovery'|'sleep'|'goals'|'fasting'|'weight'|'journal'|'supplements'>('goals');
   type FastingTracker = { startedAt: number | null; targetHours: number; lastEndedAt: number | null; lastDurationHours: number | null; completedCount: number };
   const [fastingTracker, setFastingTracker] = useState<FastingTracker>({ startedAt: null, targetHours: 12, lastEndedAt: null, lastDurationHours: null, completedCount: 0 });
   const [fastingLoaded, setFastingLoaded] = useState(false);
@@ -1003,7 +1003,7 @@ export default function Home() {
                 </div>
                 <div className="health-advice" style={{marginTop:16}}><b>{hText('Recomandări pentru această zi','Recommendations for this day')}</b><ul className="muted" style={{lineHeight:1.8,paddingLeft:20}}>{advice.map((item,i)=><li key={i}>{item}</li>)}</ul><small className="muted">{hText('Recomandările sunt orientative și folosesc doar datele introduse. Valorile lipsă nu înseamnă automat că nu ai făcut activitatea.','Guidance is informational and uses only entered data. Missing entries do not necessarily mean you did not do the activity.')}</small></div>
                 <div className="health-advice" style={{marginTop:16}}><b>{hText('Verdictul zilei','Daily verdict')}</b><p className="muted">{hText('O evaluare structurată a somnului, alimentației, hidratării, mișcării și completitudinii jurnalului. Scorul este orientativ: nu măsoară direct energia și nu înlocuiește felul în care te simți.','A structured review of sleep, nutrition, hydration, movement and journal completeness. The score is indicative: it does not directly measure energy or replace how you feel.')}</p><button className="primary" onClick={() => {
-                  const sleepScore = !day.sleep ? 0 : (day.sleep.hours>=7&&day.sleep.hours<=9?25:(day.sleep.hours>=6&&day.sleep.hours<7)||(day.sleep.hours>9&&day.sleep.hours<=10)?18:(day.sleep.hours>=5&&day.sleep.hours<6)||(day.sleep.hours>10&&day.sleep.hours<=11)?10:4);
+                  const sleepScore = !day.sleep ? 0 : (day.sleep.hours>=7&&day.sleep.hours<=9?25:((day.sleep.hours>=6&&day.sleep.hours<7)||(day.sleep.hours>9&&day.sleep.hours<=10)?18:((day.sleep.hours>=5&&day.sleep.hours<6)||(day.sleep.hours>10&&day.sleep.hours<=11)?10:4)));
                   const caloriesScore = day.meals.length===0 ? 0 : (!validProfile ? 12 : (dayTotals.calories>=calorieTarget*0.9&&dayTotals.calories<=calorieTarget*1.1?20:(dayTotals.calories>=calorieTarget*0.8&&dayTotals.calories<=calorieTarget*1.2?15:9)));
                   const proteinScore = day.meals.length===0 ? 0 : (!validProfile ? 8 : (dayTotals.protein>=proteinTarget*0.9?15:(dayTotals.protein>=proteinTarget*0.75?10:5)));
                   const hydrationScore = day.waterLiters===0 ? 0 : (day.waterLiters>=waterGoal?10:(day.waterLiters>=waterGoal*0.8?7:(day.waterLiters>=waterGoal*0.6?4:2)));
