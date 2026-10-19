@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 type Task = { id: string; title: string; done: boolean; category: string };
-type HealthWorkout = { id: string; category: string; exercise: string; sets: string; reps: string; weight: string; duration: string; notes: string };
+type HealthWorkout = { id: string; category: string; exercise: string; sets: string; reps: string; weight: string; duration: string; notes: string; sessionId?: string };
+type HealthWorkoutSession = { id: string; category: string; duration: string; averageHeartRate: string; maxHeartRate: string; exerciseCount: number };
 type HealthMeal = { id: string; name: string; calories: number; protein: number; carbs: number; fat: number };
 type HealthSleep = { hours: number; bedtime: string; wakeTime: string; quality: string };
-type HealthDayLog = { workouts: HealthWorkout[]; meals: HealthMeal[]; waterLiters: number; sleep?: HealthSleep; recoveryDone: string[] };
+type HealthDayLog = { workouts: HealthWorkout[]; workoutSessions?: HealthWorkoutSession[]; meals: HealthMeal[]; waterLiters: number; sleep?: HealthSleep; recoveryDone: string[] };
 type FoodItem = { name: string; calories: number; protein: number; carbs: number; fat: number };
 type MeasurementEntry = { date: string; chest?: number; waist?: number; thigh?: number; arms?: number };
 const foodCatalog: FoodItem[] = [
@@ -511,6 +512,8 @@ export default function Home() {
   const [workoutForm, setWorkoutForm] = useState({category:'Strength', exercise:'', sets:'3', reps:'10', weight:'', duration:'45', notes:''});
   const [workoutSplit, setWorkoutSplit] = useState('Push');
   const [pendingWorkoutExercises, setPendingWorkoutExercises] = useState<HealthWorkout[]>([]);
+  const [workoutSessionForm, setWorkoutSessionForm] = useState({duration:'', averageHeartRate:'', maxHeartRate:''});
+  const [dailyVerdict, setDailyVerdict] = useState<{date:string; score:number; title:string; good:string[]; improve:string[]; tomorrow:string} | null>(null);
   const [mealForm, setMealForm] = useState({name:'', grams:'100', calories:'', protein:'', carbs:'', fat:''});
   const [waterInput, setWaterInput] = useState('0.25');
   const [sleepForm, setSleepForm] = useState({hours:'8', bedtime:'23:00', wakeTime:'07:00', quality:'good'});
@@ -672,8 +675,11 @@ export default function Home() {
   }
   function saveWorkoutSession() {
     if (!pendingWorkoutExercises.length) { alert(language === 'en' ? 'Add at least one exercise to the session first.' : 'Adaugă cel puțin un exercițiu în sesiune.'); return; }
-    updateTodayHealth({ workouts: [...todayHealth.workouts, ...pendingWorkoutExercises.map((item, index) => ({ ...item, id: `${Date.now()}-${index}` }))] });
+    const sessionId = `session-${Date.now()}`;
+    const session: HealthWorkoutSession = { id: sessionId, category: workoutSplit, duration: workoutSessionForm.duration, averageHeartRate: workoutSessionForm.averageHeartRate, maxHeartRate: workoutSessionForm.maxHeartRate, exerciseCount: pendingWorkoutExercises.length };
+    updateTodayHealth({ workouts: [...todayHealth.workouts, ...pendingWorkoutExercises.map((item, index) => ({ ...item, id: `${sessionId}-${index}`, sessionId }))], workoutSessions: [...(todayHealth.workoutSessions || []), session] });
     setPendingWorkoutExercises([]);
+    setWorkoutSessionForm({duration:'', averageHeartRate:'', maxHeartRate:''});
   }
   function selectFood(name: string, grams = mealForm.grams) {
     const food = foodCatalog.find(item => item.name.toLocaleLowerCase() === name.trim().toLocaleLowerCase());
@@ -976,14 +982,14 @@ export default function Home() {
                   <article className="card health-stat"><label>{hText('CALORII','CALORIES')}</label><strong>{Math.round(dayTotals.calories)}</strong><p>kcal</p></article>
                   <article className="card health-stat"><label>{hText('PROTEINE','PROTEIN')}</label><strong>{Math.round(dayTotals.protein)} <small>g</small></strong></article>
                   <article className="card health-stat"><label>{hText('APĂ','WATER')}</label><strong>{day.waterLiters.toFixed(2)} <small>L</small></strong></article>
-                  <article className="card health-stat"><label>{hText('ANTRENAMENTE','WORKOUTS')}</label><strong>{day.workouts.length}</strong></article>
+                  <article className="card health-stat"><label>{hText('ANTRENAMENTE','WORKOUTS')}</label><strong>{(day.workoutSessions?.length ?? (day.workouts.length ? 1 : 0))}</strong></article>
                 </div>
                 <div className="health-advice" style={{marginTop:16}}><b>{hText('Recomandări pentru această zi','Recommendations for this day')}</b><ul className="muted" style={{lineHeight:1.8,paddingLeft:20}}>{advice.map((item,i)=><li key={i}>{item}</li>)}</ul><small className="muted">{hText('Recomandările sunt orientative și folosesc doar datele introduse. Valorile lipsă nu înseamnă automat că nu ai făcut activitatea.','Guidance is informational and uses only entered data. Missing entries do not necessarily mean you did not do the activity.')}</small></div>
                 <h3>{hText('Rezumatul zilei','Daily summary')}</h3>
                 <div className="health-log-list">
                   <div className="health-log-item"><div><b>{hText('Somn','Sleep')}</b><small>{day.sleep ? `${day.sleep.hours} h · ${day.sleep.bedtime} → ${day.sleep.wakeTime} · ${day.sleep.quality}` : hText('Nicio înregistrare','No entry')}</small></div></div>
                   <div className="health-log-item"><div><b>{hText('Mese înregistrate','Meals logged')}</b><small>{day.meals.length ? day.meals.map(m=>m.name).join(' · ') : hText('Nicio masă înregistrată','No meals logged')}</small><small>{Math.round(dayTotals.calories)} kcal · P {Math.round(dayTotals.protein)} g · C {Math.round(dayTotals.carbs)} g · G {Math.round(dayTotals.fat)} g</small></div></div>
-                  <div className="health-log-item"><div><b>{hText('Antrenamente','Workouts')}</b><small>{day.workouts.length ? day.workouts.map(w=>w.exercise).join(' · ') : hText('Niciun antrenament înregistrat','No workouts logged')}</small></div></div>
+                  <div className="health-log-item"><div><b>{hText('Antrenamente','Workouts')}</b>{(day.workoutSessions?.length ? day.workoutSessions : day.workouts.length ? [{id:'legacy-session',category:day.workouts[0].category,duration:'',averageHeartRate:'',maxHeartRate:'',exerciseCount:day.workouts.length}] : []).map((session,index)=><small key={session.id}>{hText('Sesiunea','Session')} {index+1} · {session.category} · {session.exerciseCount} {hText('exerciții','exercises')}{session.duration ? ` · ${session.duration} min` : ''}{session.averageHeartRate ? ` · ${hText('puls mediu','avg HR')} ${session.averageHeartRate}` : ''}{session.maxHeartRate ? ` · ${hText('puls maxim','max HR')} ${session.maxHeartRate}` : ''}</small>)}{day.workouts.length>0 && <small>{day.workouts.map(w=>w.exercise).join(' · ')}</small>}{day.workouts.length===0 && <small>{hText('Niciun antrenament înregistrat','No workouts logged')}</small>}</div></div>
                   <div className="health-log-item"><div><b>{hText('Recuperare','Recovery')}</b><small>{day.recoveryDone.length ? day.recoveryDone.join(' · ') : hText('Nicio activitate bifată','No activity checked')}</small></div></div>
                 </div>
                 <p className="muted tiny" style={{marginTop:14}}>{hText('Datele sunt salvate în browserul acestui dispozitiv. Pentru această versiune, înregistrările sunt pe zile calendaristice locale.','Data is saved in this device’s browser. In this version, entries use local calendar days.')}</p>
